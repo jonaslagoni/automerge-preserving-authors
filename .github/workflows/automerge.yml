@@ -16,12 +16,19 @@ jobs:
   automerge-for-humans:
     runs-on: ubuntu-latest
     steps:
+      - name: Get list of authors
+        uses: sergeysova/jq-action@v2
+        id: authors
+        with:
+          cmd: | 
+            echo ${{github.event.pull_request._links.commits.href}} && 
+            curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" "${{github.event.pull_request._links.commits.href}}?per_page=100" | jq -r '[.[].commit.author | {name: .name, email: .email}] | unique | map("Co-authored-by: " + .name + " <" + .email + ">") | join("\n")'
       - name: Automerge PR
         uses: pascalgn/automerge-action@v0.14.3
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
-          MERGE_COMMIT_MESSAGE: "{pullRequest.title} (#{pullRequest.number})\n{pullRequest.description}"
+          MERGE_COMMIT_MESSAGE: "{pullRequest.title} (#{pullRequest.number})\n${{ steps.authors.outputs.value }}"
           MERGE_RETRIES: "20"
           MERGE_RETRY_SLEEP: "30000"
