@@ -1,1 +1,1 @@
-This is a test about automerging action
+This is a test about automerging action!
